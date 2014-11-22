@@ -16,10 +16,10 @@
 
   var google_module = angular.module('Google', []);
 
-  google_module.service('GoogleAuth', function ($location, $http, $rootScope) {
+  google_module.service('GoogleAuth', ['$location','$http','$rootScope','$window','googleClientID',function ($location, $http, $rootScope,$window,googleClientID) {
 
     var access_token = null;
-    var client_id = '682690953089-pcokcr123r9m8v602p0rv9bi9vkfcsc0.apps.googleusercontent.com';
+    var client_id = googleClientID;
     var token_valid = false;
     var token_rejected = false;
 
@@ -34,7 +34,7 @@
             access_token = decodeURIComponent(m[2]);
             this.setTokenValid();
             this.setTokenRejected(false);
-            localStorage['mobiquity_access_token'] = access_token;
+            $window.localStorage['mobiquity_access_token'] = access_token;
           }
         }
       },
@@ -60,7 +60,7 @@
         token_rejected = bool;
       },
       populateAccessTokenFromLocalStorage:function(){
-        var mob_access_token = localStorage['mobiquity_access_token'];
+        var mob_access_token = $window.localStorage['mobiquity_access_token'];
         //there is an api to check if an access token is invalid but I didn't implement it
 
         if(util.set(mob_access_token)) {
@@ -84,9 +84,9 @@
 
     return obj;
 
-  });
+  }]);
 
-  google_module.service('GoogleCalendar', function ($location, $http, GoogleAuth, $q) {
+  google_module.service('GoogleCalendar',['$location','$http','GoogleAuth','$q','$window',function ($location, $http, GoogleAuth, $q,$window) {
 
     var auth = GoogleAuth; //i know this isn't exactly necessary but I think its easier to follow
     var active_calendar = null;
@@ -200,18 +200,29 @@
         });
       },
       setActiveCalendar:function(calendar){
-        localStorage['mobiquity_active_calendar'] = JSON.stringify(calendar);
-        active_calendar = calendar;
+        try {
+          $window.localStorage['mobiquity_active_calendar'] = JSON.stringify(calendar);
+        }catch(e){
+          //do nothing.. we can't use local storage for some reason
+        }
+          active_calendar = calendar;
+      },
+      setActiveCalendarInLocalStorage:function(calendar){
+        $window.localStorage['mobiquity_active_calendar'] = JSON.stringify(calendar);
       },
       getActiveCalendar:function(){
 
         return active_calendar;
       },
       populateActiveCalendarFromLocalStorage:function(){
-        var local_storage_active_calendar = localStorage['mobiquity_active_calendar'];
-        if(util.set(local_storage_active_calendar)) {
-          var cal = JSON.parse(local_storage_active_calendar);
-          active_calendar = cal;
+        try {
+          var local_storage_active_calendar = $window.localStorage['mobiquity_active_calendar'];
+          if (util.set(local_storage_active_calendar)) {
+            var cal = JSON.parse(local_storage_active_calendar);
+            active_calendar = cal;
+          }
+        }catch(e){
+          //do nothing
         }
 
         return cal;
@@ -223,7 +234,7 @@
     return obj;
 
 
-  });
+  }]);
 
   var application = angular.module('Mobiquity.googleCalendar', ['Google']);
 
@@ -251,11 +262,13 @@
 
   });
 
+  application.constant('googleClientID', '682690953089-pcokcr123r9m8v602p0rv9bi9vkfcsc0.apps.googleusercontent.com');
+
   application.run(function () {
 
   });
 
-  application.controller('MainController', function ($scope, GoogleAuth, GoogleCalendar,$window) {
+  application.controller('MainController', ['$scope','GoogleAuth','GoogleCalendar','$window',function ($scope, GoogleAuth, GoogleCalendar) {
 
     $scope.google_auth = GoogleAuth;
     $scope.google_calendar = GoogleCalendar;
@@ -475,8 +488,8 @@
       $scope.getListForSelectedCalendar();
     }
 
-  });
+  }]);
 
 
 
-})(document); //no global namespace pollution
+})(); //no global namespace pollution
