@@ -1,5 +1,5 @@
-(function (document) {
-
+(function(){
+  'use strict';
   var util = {
     'set':function(obj){
       return (typeof obj !== "undefined" && obj !== null);
@@ -10,7 +10,7 @@
 
     },
     'isArray':function(obj){
-      return toString.call(obj) === '[object Array]';
+      return obj.toString() === '[object Array]';
     }
   }
 
@@ -29,8 +29,8 @@
         //lifted straight from google, will refactor if I have time
         var queryString = location.hash.substring(1),
           regex = /([^&=]+)=([^&]*)/g, m;
-        while (m = regex.exec(queryString)) {
-          if (m[1] == "access_token") {
+        while (m = regex.exec(queryString)){
+          if (m[1] === "access_token") {
             access_token = decodeURIComponent(m[2]);
             this.setTokenValid();
             this.setTokenRejected(false);
@@ -69,7 +69,7 @@
         }
         //while we are using it.. the first request will trigger an error
       }
-    }
+    };
 
     //ugh this is the part i mentioned I'm not happy about.. it's a workaround but not the end of the world
     //might be a bug in angular or i needed to make a reference somewhere else and point ot that, ran out of time
@@ -98,8 +98,10 @@
       },
 
       getActiveCalendarName:function(){ //i should call get get summary but I think name is better
-        if(util.set(active_calendar) && util.set(active_calendar.summary)) return active_calendar.summary;
-      },
+        if(util.set(active_calendar) && util.set(active_calendar.summary)) {
+          return active_calendar.summary;
+        }
+        },
 
       getListForDate: function (date) {
         var deferred = $q.defer();
@@ -116,7 +118,6 @@
         var min_time = day.startOf('day').toISOString();
         var max_time = day2.startOf('day').add(1, 'day').toISOString();
 
-        var deferred = $q.defer();
 
         $http({
           'method': 'GET',
@@ -136,7 +137,6 @@
       },
 
       getList: function () {
-        var _this = this;
         var deferred = $q.defer();
         if (!GoogleAuth.getAccessToken()) {
           deferred.resolve([]);
@@ -177,10 +177,12 @@
 
         var end_hour = data.end.hour;
 
-        if (parseInt(data.start.meridian) == 2) start_hour += 12;
-
-        if (parseInt(data.end.meridian) == 2) end_hour += 12;
-
+        if (parseInt(data.start.meridian) === 2) {
+          start_hour += 12;
+        }
+        if (parseInt(data.end.meridian) === 2) {
+          end_hour += 12;
+        }
         var moment_date_start = moment(data.start.date);
         var moment_date_end = angular.copy(moment_date_start);
 
@@ -201,33 +203,33 @@
       },
       setActiveCalendar:function(calendar){
         try {
-          $window.localStorage['mobiquity_active_calendar'] = JSON.stringify(calendar);
+          $window.localStorage.mobiquity_active_calendar = JSON.stringify(calendar);
         }catch(e){
           //do nothing.. we can't use local storage for some reason
         }
           active_calendar = calendar;
       },
       setActiveCalendarInLocalStorage:function(calendar){
-        $window.localStorage['mobiquity_active_calendar'] = JSON.stringify(calendar);
+        $window.localStorage.mobiquity_active_calendar = JSON.stringify(calendar);
       },
       getActiveCalendar:function(){
 
         return active_calendar;
       },
       populateActiveCalendarFromLocalStorage:function(){
+        var cal = null;
         try {
-          var local_storage_active_calendar = $window.localStorage['mobiquity_active_calendar'];
+          var local_storage_active_calendar = $window.localStorage.mobiquity_active_calendar;
           if (util.set(local_storage_active_calendar)) {
-            var cal = JSON.parse(local_storage_active_calendar);
+            cal = JSON.parse(local_storage_active_calendar);
             active_calendar = cal;
           }
         }catch(e){
           //do nothing
         }
-
-        return cal;
+          return cal;
         }
-    }
+    };
 
     obj.populateActiveCalendarFromLocalStorage();
 
@@ -246,7 +248,7 @@
     $httpProvider.interceptors.push(function ($q, $rootScope) {
       return {
         'responseError': function (resp) {
-          if (resp.status == 401) {
+          if (resp.status === 401) {
             //$injector.get('GoogleAuth').setInvalidToken();  not sure why this isn't working... says it isn't found,
             // but i'm using it I know this is a judo and i'm not happy with it
             $rootScope.$broadcast('authentication.invalid'); //ugh i hate this perhaps I can circle back later
@@ -256,7 +258,7 @@
 
           return $q.reject(resp);
         }
-      }
+      };
     });
 
 
@@ -287,7 +289,8 @@
       $scope.hours.push(i);
     }
 
-    for (var i = 0; i <= 11; i++) {
+
+    for (i = 0; i <= 11; i++) {
       var increment = i * 5;
       if (increment <= 5) {
         increment = "0" + increment; //there's about a billion ways to do this, this was the easiest
@@ -310,19 +313,19 @@
       var formatted_date = moment(date).format(format);
       return formatted_date;
 
-    }
+    };
 
     $scope.formatEventDateTime = function(dt){
       var format = "MMMM Do, YYYY [at] h:mma";
       return moment(dt).format(format);
 
-    }
+    };
 
     $scope.getSelectedDateDisplay = function(){
       var format = 'MMMM Do, YYYY';
 
       return $scope.formatEventDate(angular.copy($scope.selected_date),format);
-    }
+    };
 
     $scope.event = {
       summary: '',
@@ -341,7 +344,7 @@
       },
       'calendar_id': '',
       'calendar':null
-    }
+    };
 
     $scope.$watch('event',function(){
 
@@ -384,17 +387,17 @@
       $scope.event_form_reset = true;
       $scope.event = angular.copy($scope.event_copy);
 
-    }
+    };
 
     $scope.authenticatedAndValid = function(){
       return $scope.google_auth.tokenValid() && !$scope.google_auth.getTokenRejected();
-    }
+    };
 
     $scope.showAuthenticationError = function(){
 
       return $scope.google_auth.getAccessToken() &&
         $scope.google_auth.getAccessToken().length > 0 && $scope.google_auth.getTokenRejected();
-    }
+    };
 
     $scope.createEvent = function () {
       var valid = $scope.addEvent.$valid;
@@ -414,7 +417,7 @@
 
         });
       }
-    }
+    };
 
     $scope.google_auth.parseGoogleAuthTokenFromCurrentLocation();
 
@@ -429,20 +432,20 @@
           //then set it if we happened to load it from local storage on initial load
           var calendar_id = encodeURIComponent(calendar.id);
           var active_calendar_id = active_calendar;
-          if(calendar_id == active_calendar_id){
+          if(calendar_id === active_calendar_id){
 
             $scope.calendar = calendar;
             $scope.google_calendar.setActiveCalendar(calendar);
           }
         });
       });
-    }
+    };
 
     $scope.updateEventDataFromCalendar = function () {
       $scope.event.calendar_id = $scope.event.calendar.id;
       $scope.event.start.timeZone = $scope.event.end.timeZone = $scope.event.calendar.timeZone;
 
-    }
+    };
 
     $scope.getListForSelectedCalendar = function () {
       $scope.current_day_events = [];
